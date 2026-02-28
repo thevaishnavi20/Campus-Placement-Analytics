@@ -156,43 +156,58 @@ st.markdown("### 🎯 Placement Prediction")
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    student_index = st.selectbox(
-        "Select Student Index",
-        df_filtered.index
-    )
-    student = df_filtered.loc[student_index]
+    if len(df_filtered) > 0:
+        student_options = ["-- Select a Student --"] + list(df_filtered.index)
+        selected_student = st.selectbox(
+            "Select Student Index",
+            student_options
+        )
+    else:
+        selected_student = None
+        st.warning("⚠️ No students available in filtered data")
     
-    features = [
-        "Internships",
-        "Projects",
-        "Workshops/Certifications",
-        "AptitudeTestScore",
-        "SoftSkillsRating",
-        "ExtracurricularActivities",
-        "PlacementTraining",
-        "SSC_Marks",
-        "HSC_Marks",
-        "Technical_Skills_Score"
-    ]
-    
-    available_features = [f for f in features if f in student.index]
-    
-    display_df = pd.DataFrame({
-        "Feature": available_features,
-        "Value": [student[f] for f in available_features]
-    })
-    
-    st.dataframe(display_df, use_container_width=True, height=400)
+    if selected_student and selected_student != "-- Select a Student --":
+        student = df_filtered.loc[selected_student]
+        
+        features = [
+            "Internships",
+            "Projects",
+            "Workshops/Certifications",
+            "AptitudeTestScore",
+            "SoftSkillsRating",
+            "ExtracurricularActivities",
+            "PlacementTraining",
+            "SSC_Marks",
+            "HSC_Marks",
+            "Technical_Skills_Score"
+        ]
+        
+        available_features = [f for f in features if f in student.index]
+        
+        display_df = pd.DataFrame({
+            "Feature": available_features,
+            "Value": [student[f] for f in available_features]
+        })
+        
+        st.dataframe(display_df, use_container_width=True, height=400)
+    else:
+        st.info("👆 Please select a student from the dropdown above")
 
 with col2:
-    fig = go.Figure(go.Bar(
-        x=[student[f] for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
-        y=[f for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
-        orientation='h',
-        marker=dict(color='#c9184a')
-    ))
-    fig.update_layout(title="Student Profile", height=400, xaxis_title="Score", yaxis_title="Features")
-    st.plotly_chart(fig, use_container_width=True)
+    if selected_student and selected_student != "-- Select a Student --":
+        student = df_filtered.loc[selected_student]
+        available_features = [f for f in ["Internships", "Projects", "Workshops/Certifications", "AptitudeTestScore", "SoftSkillsRating", "ExtracurricularActivities", "PlacementTraining", "SSC_Marks", "HSC_Marks", "Technical_Skills_Score"] if f in student.index]
+        
+        fig = go.Figure(go.Bar(
+            x=[student[f] for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
+            y=[f for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
+            orientation='h',
+            marker=dict(color='#c9184a')
+        ))
+        fig.update_layout(title="Student Profile", height=400, xaxis_title="Score", yaxis_title="Features")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("📈 Student profile chart will appear here after selection")
 
 # ---------------- SIMPLE PREDICTION LOGIC ----------------
 def predict_placement(row):
@@ -217,9 +232,10 @@ def predict_placement(row):
     return confidence
 
 if st.button("🔮 Predict Placement", use_container_width=True):
-    if student_index is None or len(df_filtered) == 0:
-        st.warning("⚠️ Please select a student to predict placement")
+    if not selected_student or selected_student == "-- Select a Student --" or len(df_filtered) == 0:
+        st.warning("⚠️ Please select a student ID from the dropdown above to predict placement")
     else:
+        student = df_filtered.loc[selected_student]
         confidence = predict_placement(student)
     
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -242,7 +258,7 @@ if st.button("🔮 Predict Placement", use_container_width=True):
             if confidence >= 60:
                 st.success(f"✅ Likely PLACED (Confidence: {confidence:.0f}%)")
             else:
-                st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.0f}%)")
+                st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.0f}%)"))
 
 # ---------------- FOOTER ----------------
 st.markdown("---")
