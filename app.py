@@ -2,12 +2,38 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Campus Placement Analytics Dashboard",
-    layout="wide"
+    layout="wide",
+    page_icon="🎓",
+    initial_sidebar_state="expanded"
 )
+
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 3rem;
+        font-weight: bold;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        padding: 1rem 0;
+    }
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ---------------- LOAD DATA ----------------
 @st.cache_data
@@ -17,8 +43,8 @@ def load_data():
 df = load_data()
 
 # ---------------- TITLE ----------------
-st.markdown("## 🎓 Campus Placement Analytics Dashboard")
-st.success("CSV file loaded successfully!")
+st.markdown('<h1 class="main-header">🎓 Campus Placement Analytics Dashboard</h1>', unsafe_allow_html=True)
+st.markdown("---")
 
 # ---------------- SIDEBAR FILTER ----------------
 st.sidebar.header("🔎 Filter Data")
@@ -36,61 +62,90 @@ else:
     df_filtered = df.copy()
 
 # ---------------- KEY METRICS ----------------
-st.markdown("### 📌 Key Metrics")
+st.markdown("### 📊 Key Metrics")
 
-c1, c2, c3 = st.columns(3)
-c1.metric("Total Students", df_filtered.shape[0])
-c2.metric("Total Columns", df_filtered.shape[1])
-c3.metric("Unique Values", df_filtered[filter_col].nunique())
+c1, c2, c3, c4 = st.columns(4)
+with c1:
+    st.metric("📚 Total Students", df_filtered.shape[0], delta="Active")
+with c2:
+    placed = df_filtered[df_filtered.get('PlacementStatus', df_filtered.columns[0]) == 'Placed'].shape[0] if 'PlacementStatus' in df_filtered.columns else 0
+    st.metric("✅ Placed", placed)
+with c3:
+    avg_score = df_filtered.select_dtypes(include=np.number).mean().mean()
+    st.metric("📈 Avg Score", f"{avg_score:.1f}")
+with c4:
+    st.metric("🔍 Filtered By", filter_col[:15])
 
 # ---------------- DATASET PREVIEW ----------------
 st.markdown("### 📋 Dataset Preview")
 st.dataframe(df_filtered.head(10), use_container_width=True)
 
-# ---------------- NUMERIC COLUMN VISUAL ----------------
-st.markdown("### 📊 Numeric Column Visualization")
+# ---------------- VISUALIZATIONS ----------------
+st.markdown("### 📈 Data Visualizations")
 
-numeric_cols = df_filtered.select_dtypes(include=np.number).columns
-num_col = st.selectbox("Select numeric column", numeric_cols)
+col1, col2 = st.columns(2)
 
-fig, ax = plt.subplots(figsize=(6, 4))
-ax.plot(df_filtered[num_col].values)
-ax.set_title(num_col)
-ax.set_ylabel("Value")
-ax.set_xlabel("Index")
-fig.patch.set_facecolor("none")
+with col1:
+    numeric_cols = df_filtered.select_dtypes(include=np.number).columns
+    num_col = st.selectbox("Select numeric column", numeric_cols)
+    
+    fig = px.histogram(df_filtered, x=num_col, nbins=30, 
+                       title=f"Distribution of {num_col}",
+                       color_discrete_sequence=['#667eea'])
+    fig.update_layout(showlegend=False, height=400)
+    st.plotly_chart(fig, use_container_width=True)
 
-st.pyplot(fig)
+with col2:
+    fig = px.box(df_filtered, y=num_col, 
+                 title=f"Box Plot of {num_col}",
+                 color_discrete_sequence=['#764ba2'])
+    fig.update_layout(showlegend=False, height=400)
+    st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- PLACEMENT PREDICTION ----------------
-st.markdown("### 🧠 Placement Prediction")
+st.markdown("---")
+st.markdown("### 🎯 Placement Prediction")
 
-student_index = st.selectbox(
-    "Select Student Index",
-    df_filtered.index
-)
+col1, col2 = st.columns([1, 2])
 
-student = df_filtered.loc[student_index]
+with col1:
+    student_index = st.selectbox(
+        "Select Student Index",
+        df_filtered.index
+    )
+    student = df_filtered.loc[student_index]
+    
+    features = [
+        "Internships",
+        "Projects",
+        "Workshops/Certifications",
+        "AptitudeTestScore",
+        "SoftSkillsRating",
+        "ExtracurricularActivities",
+        "PlacementTraining",
+        "SSC_Marks",
+        "HSC_Marks",
+        "Technical_Skills_Score"
+    ]
+    
+    available_features = [f for f in features if f in student.index]
+    
+    display_df = pd.DataFrame({
+        "Feature": available_features,
+        "Value": [student[f] for f in available_features]
+    })
+    
+    st.dataframe(display_df, use_container_width=True, height=400)
 
-features = [
-    "Internships",
-    "Projects",
-    "Workshops/Certifications",
-    "AptitudeTestScore",
-    "SoftSkillsRating",
-    "ExtracurricularActivities",
-    "PlacementTraining",
-    "SSC_Marks",
-    "HSC_Marks",
-    "Technical_Skills_Score"
-]
-
-display_df = pd.DataFrame({
-    "Feature": features,
-    "Value": student[features].values
-})
-
-st.table(display_df)
+with col2:
+    fig = go.Figure(go.Bar(
+        x=[student[f] for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
+        y=[f for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
+        orientation='h',
+        marker=dict(color='#667eea')
+    ))
+    fig.update_layout(title="Student Profile", height=400, xaxis_title="Score", yaxis_title="Features")
+    st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- SIMPLE PREDICTION LOGIC ----------------
 def predict_placement(row):
@@ -114,14 +169,31 @@ def predict_placement(row):
     confidence = min(score, 100)
     return confidence
 
-if st.button("Predict Placement"):
+if st.button("🔮 Predict Placement", use_container_width=True):
     confidence = predict_placement(student)
-
-    if confidence >= 60:
-        st.success(f"✅ Likely PLACED (Confidence: {confidence:.2f}%)")
-    else:
-        st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.2f}%)")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=confidence,
+            title={'text': "Placement Confidence"},
+            gauge={'axis': {'range': [None, 100]},
+                   'bar': {'color': "#667eea"},
+                   'steps': [
+                       {'range': [0, 40], 'color': "#ffcccc"},
+                       {'range': [40, 70], 'color': "#fff4cc"},
+                       {'range': [70, 100], 'color': "#ccffcc"}],
+                   'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 60}}
+        ))
+        fig.update_layout(height=300)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        if confidence >= 60:
+            st.success(f"✅ Likely PLACED (Confidence: {confidence:.0f}%)")
+        else:
+            st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.0f}%)")
 
 # ---------------- FOOTER ----------------
 st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit")
+st.markdown("<div style='text-align: center; color: #667eea;'>Made with ❤️ using Streamlit | Campus Placement Analytics © 2024</div>", unsafe_allow_html=True)
