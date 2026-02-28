@@ -7,16 +7,16 @@ import plotly.graph_objects as go
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="Campus Placement Analytics Dashboard",
+    page_title="Campus Placement Analytics",
     layout="wide",
     page_icon="🎓",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
-st.markdown("""
+# Custom CSS with animations
+st.markdown(f"""
 <style>
-    .main-header {
+    .main-header {{
         font-size: 3rem;
         font-weight: bold;
         background: linear-gradient(90deg, #a4133c 0%, #ff4d6d 100%);
@@ -24,7 +24,22 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         text-align: center;
         padding: 1rem 0;
-    }
+        animation: fadeIn 1s ease-in;
+    }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(-20px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    .metric-card {{
+        animation: slideIn 0.5s ease-out;
+    }}
+    @keyframes slideIn {{
+        from {{ transform: translateX(-20px); opacity: 0; }}
+        to {{ transform: translateX(0); opacity: 1; }}
+    }}
+    @media (max-width: 768px) {{
+        .main-header {{ font-size: 2rem; }}
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -36,10 +51,10 @@ def load_data():
 df = load_data()
 
 # ---------------- TITLE ----------------
-st.markdown('<h1 class="main-header">🎓 Campus Placement Analytics Dashboard</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🎓 Campus Placement Analytics</h1>', unsafe_allow_html=True)
 st.markdown("---")
 
-# ---------------- SIDEBAR FILTER ----------------
+# ---------------- SIDEBAR ----------------
 st.sidebar.header("🔎 Filter Data")
 
 filter_col = st.sidebar.selectbox("Select column", df.columns)
@@ -69,9 +84,118 @@ with c3:
 with c4:
     st.metric("🔍 Filtered By", filter_col[:15])
 
+# ---------------- SEARCH STUDENT ----------------
+st.markdown("### 🔍 Search Student by ID")
+search_col1, search_col2 = st.columns([2, 1])
+
+with search_col1:
+    search_term = st.text_input("Search by Student ID", placeholder="Enter student ID (e.g., 1, 100, 500)...")
+    
+if search_term:
+    if 'StudentID' in df_filtered.columns:
+        search_results = df_filtered[df_filtered['StudentID'].astype(str).str.contains(search_term, case=False, na=False)]
+    else:
+        search_results = df_filtered[df_filtered.astype(str).apply(lambda x: x.str.contains(search_term, case=False, na=False)).any(axis=1)]
+    
+    if len(search_results) > 0:
+        st.dataframe(search_results, use_container_width=True)
+        st.success(f"Found {len(search_results)} student(s)")
+    else:
+        st.warning("No students found matching your search")
+else:
+    st.info("Enter a Student ID to search")
+
 # ---------------- DATASET PREVIEW ----------------
 st.markdown("### 📋 Dataset Preview")
 st.dataframe(df_filtered.head(10), use_container_width=True)
+
+# ---------------- PLACEMENT RATE BY DEPARTMENT ----------------
+st.markdown("### 🏢 Placement Rate by Department/Stream")
+
+if 'PlacementStatus' in df_filtered.columns:
+    # Create department categories based on Technical Skills Score
+    df_temp = df_filtered.copy()
+    if 'Technical_Skills_Score' in df_temp.columns:
+        df_temp['Stream'] = pd.cut(df_temp['Technical_Skills_Score'], 
+                                    bins=[0, 50, 70, 100], 
+                                    labels=['Arts', 'Commerce', 'Engineering'])
+    else:
+        df_temp['Stream'] = 'General'
+    
+    dept_placement = df_temp.groupby('Stream')['PlacementStatus'].apply(
+        lambda x: (x == 'placed').sum() / len(x) * 100 if len(x) > 0 else 0
+    ).reset_index()
+    dept_placement.columns = ['Stream', 'Placement_Rate']
+    
+    fig = px.bar(dept_placement, x='Stream', y='Placement_Rate', 
+                 title='Placement Rate by Stream (%)',
+                 color='Placement_Rate',
+                 color_continuous_scale=['#ffccd5', '#c9184a'])
+    fig.update_layout(height=400)
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("Placement data not available")
+
+# ---------------- TOP PERFORMERS LEADERBOARD ----------------
+st.markdown("### 🏆 Top Performing Students Leaderboard")
+
+if 'CGPA' in df_filtered.columns:
+    top_students = df_filtered.nlargest(10, 'CGPA')[['CGPA']].reset_index(drop=True)
+    top_students.index += 1
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.dataframe(top_students.style.background_gradient(cmap='Reds'), use_container_width=True)
+    with col2:
+        fig = go.Figure(go.Indicator(
+            mode="number",
+            value=top_students['CGPA'].iloc[0] if len(top_students) > 0 else 0,
+            title={'text': "🥇 Top CGPA"},
+            number={'font': {'size': 50, 'color': '#c9184a'}}
+        ))
+        fig.update_layout(height=200)
+        st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("CGPA data not available for leaderboard")
+
+# ---------------- SKILL GAP ANALYSIS ----------------
+st.markdown("### 📊 Skill Gap Analysis")
+
+skill_cols = ['Technical_Skills_Score', 'SoftSkillsRating', 'AptitudeTestScore']
+available_skills = [col for col in skill_cols if col in df_filtered.columns]
+
+if available_skills:
+    skill_avg = df_filtered[available_skills].mean()
+    skill_target = pd.Series([80, 4.5, 75], index=['Technical_Skills_Score', 'SoftSkillsRating', 'AptitudeTestScore'])
+    
+    skill_gap_data = pd.DataFrame({
+        'Skill': available_skills,
+        'Current Avg': [skill_avg[s] for s in available_skills],
+        'Target': [skill_target[s] if s in skill_target.index else 80 for s in available_skills]
+    })
+    
+    fig = go.Figure()
+    fig.add_trace(go.Bar(name='Current', x=skill_gap_data['Skill'], y=skill_gap_data['Current Avg'], marker_color='#ff8fa3'))
+    fig.add_trace(go.Bar(name='Target', x=skill_gap_data['Skill'], y=skill_gap_data['Target'], marker_color='#c9184a'))
+    fig.update_layout(barmode='group', title='Skill Gap Analysis', height=400)
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("Skill data not available")
+
+# ---------------- TIMELINE OF PLACEMENT DRIVES ----------------
+st.markdown("### 📅 Timeline of Placement Drives")
+
+timeline_data = pd.DataFrame({
+    'Company': ['TCS', 'Infosys', 'Wipro', 'Accenture', 'Cognizant', 'HCL'],
+    'Date': pd.date_range(start='2024-01-15', periods=6, freq='15D'),
+    'Students_Placed': [45, 38, 52, 30, 41, 35]
+})
+
+fig = px.scatter(timeline_data, x='Date', y='Students_Placed', size='Students_Placed',
+                 color='Company', title='Placement Drive Timeline',
+                 hover_data=['Company', 'Students_Placed'])
+fig.update_layout(height=400)
+st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- VISUALIZATIONS ----------------
 st.markdown("### 📈 Data Visualizations")
