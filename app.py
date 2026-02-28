@@ -88,55 +88,6 @@ with c4:
 st.markdown("### 📋 Dataset Preview")
 st.dataframe(df_filtered.head(10), use_container_width=True)
 
-# ---------------- PLACEMENT RATE BY DEPARTMENT ----------------
-st.markdown("### 🏢 Placement Rate by Department/Stream")
-
-if 'PlacementStatus' in df_filtered.columns:
-    # Create department categories based on Technical Skills Score
-    df_temp = df_filtered.copy()
-    if 'Technical_Skills_Score' in df_temp.columns:
-        df_temp['Stream'] = pd.cut(df_temp['Technical_Skills_Score'], 
-                                    bins=[0, 50, 70, 100], 
-                                    labels=['Arts', 'Commerce', 'Engineering'])
-    else:
-        df_temp['Stream'] = 'General'
-    
-    dept_placement = df_temp.groupby('Stream')['PlacementStatus'].apply(
-        lambda x: (x == 'placed').sum() / len(x) * 100 if len(x) > 0 else 0
-    ).reset_index()
-    dept_placement.columns = ['Stream', 'Placement_Rate']
-    
-    fig = px.bar(dept_placement, x='Stream', y='Placement_Rate', 
-                 title='Placement Rate by Stream (%)',
-                 color='Placement_Rate',
-                 color_continuous_scale=['#ffccd5', '#c9184a'])
-    fig.update_layout(height=400)
-    st.plotly_chart(fig, use_container_width=True)
-else:
-    st.info("Placement data not available")
-
-# ---------------- TOP PERFORMERS LEADERBOARD ----------------
-st.markdown("### 🏆 Top Performing Students Leaderboard")
-
-if 'CGPA' in df_filtered.columns:
-    top_students = df_filtered.nlargest(10, 'CGPA')[['CGPA']].reset_index(drop=True)
-    top_students.index += 1
-    
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.dataframe(top_students.style.background_gradient(cmap='Reds'), use_container_width=True)
-    with col2:
-        fig = go.Figure(go.Indicator(
-            mode="number",
-            value=top_students['CGPA'].iloc[0] if len(top_students) > 0 else 0,
-            title={'text': "🥇 Top CGPA"},
-            number={'font': {'size': 50, 'color': '#c9184a'}}
-        ))
-        fig.update_layout(height=200)
-        st.plotly_chart(fig, use_container_width=True)
-else:
-    st.info("CGPA data not available for leaderboard")
-
 # ---------------- SKILL GAP ANALYSIS ----------------
 st.markdown("### 📊 Skill Gap Analysis")
 
