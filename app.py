@@ -242,7 +242,7 @@ if st.button("🔮 Predict Placement", use_container_width=True):
             if confidence >= 60:
                 st.success(f"✅ Likely PLACED (Confidence: {confidence:.0f}%)")
             else:
-                st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.0f}%)"))
+                st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.0f}%)")
 
 # ---------------- FOOTER ----------------
 st.markdown("---")
