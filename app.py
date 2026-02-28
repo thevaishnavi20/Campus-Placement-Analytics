@@ -217,29 +217,32 @@ def predict_placement(row):
     return confidence
 
 if st.button("🔮 Predict Placement", use_container_width=True):
-    confidence = predict_placement(student)
+    if student_index is None or len(df_filtered) == 0:
+        st.warning("⚠️ Please select a student to predict placement")
+    else:
+        confidence = predict_placement(student)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number+delta",
-            value=confidence,
-            title={'text': "Placement Confidence"},
-            gauge={'axis': {'range': [None, 100]},
-                   'bar': {'color': "#c9184a"},
-                   'steps': [
-                       {'range': [0, 40], 'color': "#ffccd5"},
-                       {'range': [40, 70], 'color': "#ff8fa3"},
-                       {'range': [70, 100], 'color': "#ff4d6d"}],
-                   'threshold': {'line': {'color': "#a4133c", 'width': 4}, 'thickness': 0.75, 'value': 60}}
-        ))
-        fig.update_layout(height=300)
-        st.plotly_chart(fig, use_container_width=True)
-        
-        if confidence >= 60:
-            st.success(f"✅ Likely PLACED (Confidence: {confidence:.0f}%)")
-        else:
-            st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.0f}%)")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=confidence,
+                title={'text': "Placement Confidence"},
+                gauge={'axis': {'range': [None, 100]},
+                       'bar': {'color': "#c9184a"},
+                       'steps': [
+                           {'range': [0, 40], 'color': "#ffccd5"},
+                           {'range': [40, 70], 'color': "#ff8fa3"},
+                           {'range': [70, 100], 'color': "#ff4d6d"}],
+                       'threshold': {'line': {'color': "#a4133c", 'width': 4}, 'thickness': 0.75, 'value': 60}}
+            ))
+            fig.update_layout(height=300)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            if confidence >= 60:
+                st.success(f"✅ Likely PLACED (Confidence: {confidence:.0f}%)")
+            else:
+                st.error(f"❌ Likely NOT PLACED (Confidence: {confidence:.0f}%)"))
 
 # ---------------- FOOTER ----------------
 st.markdown("---")
