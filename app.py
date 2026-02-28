@@ -84,27 +84,6 @@ with c3:
 with c4:
     st.metric("🔍 Filtered By", filter_col[:15])
 
-# ---------------- SEARCH STUDENT ----------------
-st.markdown("### 🔍 Search Student by ID")
-search_col1, search_col2 = st.columns([2, 1])
-
-with search_col1:
-    search_term = st.text_input("Search by Student ID", placeholder="Enter student ID (e.g., 1, 100, 500)...")
-    
-if search_term:
-    if 'StudentID' in df_filtered.columns:
-        search_results = df_filtered[df_filtered['StudentID'].astype(str).str.contains(search_term, case=False, na=False)]
-    else:
-        search_results = df_filtered[df_filtered.astype(str).apply(lambda x: x.str.contains(search_term, case=False, na=False)).any(axis=1)]
-    
-    if len(search_results) > 0:
-        st.dataframe(search_results, use_container_width=True)
-        st.success(f"Found {len(search_results)} student(s)")
-    else:
-        st.warning("No students found matching your search")
-else:
-    st.info("Enter a Student ID to search")
-
 # ---------------- DATASET PREVIEW ----------------
 st.markdown("### 📋 Dataset Preview")
 st.dataframe(df_filtered.head(10), use_container_width=True)
