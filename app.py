@@ -190,8 +190,6 @@ with col1:
         })
         
         st.dataframe(display_df, use_container_width=True, height=400)
-    else:
-        st.info("👆 Please select a student from the dropdown above")
 
 with col2:
     if selected_student and selected_student != "-- Select a Student --":
@@ -206,8 +204,6 @@ with col2:
         ))
         fig.update_layout(title="Student Profile", height=400, xaxis_title="Score", yaxis_title="Features")
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("📈 Student profile chart will appear here after selection")
 
 # ---------------- SIMPLE PREDICTION LOGIC ----------------
 def predict_placement(row):
@@ -262,4 +258,4 @@ if st.button("🔮 Predict Placement", use_container_width=True):
 
 # ---------------- FOOTER ----------------
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: #c9184a;'>Made with ❤️ using Streamlit | Campus Placement Analytics © 2024</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: #c9184a;'>Made with ❤️ using Streamlit | Campus Placement Analytics © 2026</div>", unsafe_allow_html=True)
