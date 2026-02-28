@@ -76,7 +76,7 @@ c1, c2, c3, c4 = st.columns(4)
 with c1:
     st.metric("📚 Total Students", df_filtered.shape[0], delta="Active")
 with c2:
-    placed = df_filtered[df_filtered.get('PlacementStatus', df_filtered.columns[0]) == 'Placed'].shape[0] if 'PlacementStatus' in df_filtered.columns else 0
+    placed = df_filtered[df_filtered.get('PlacementStatus', df_filtered.columns[0]) == 'placed'].shape[0] if 'PlacementStatus' in df_filtered.columns else 0
     st.metric("✅ Placed", placed)
 with c3:
     avg_score = df_filtered.select_dtypes(include=np.number).mean().mean()
