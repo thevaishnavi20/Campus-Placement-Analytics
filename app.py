@@ -19,7 +19,7 @@ st.markdown("""
     .main-header {
         font-size: 3rem;
         font-weight: bold;
-        background: linear-gradient(90deg, #9c89b8 0%, #f0a6ca 100%);
+        background: linear-gradient(90deg, #22223b 0%, #4a4e69 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
@@ -84,14 +84,14 @@ with col1:
     
     fig = px.histogram(df_filtered, x=num_col, nbins=30, 
                        title=f"Distribution of {num_col}",
-                       color_discrete_sequence=['#9c89b8'])
+                       color_discrete_sequence=['#4a4e69'])
     fig.update_layout(showlegend=False, height=400)
     st.plotly_chart(fig, use_container_width=True)
 
 with col2:
     fig = px.box(df_filtered, y=num_col, 
                  title=f"Box Plot of {num_col}",
-                 color_discrete_sequence=['#f0a6ca'])
+                 color_discrete_sequence=['#9a8c98'])
     fig.update_layout(showlegend=False, height=400)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -135,7 +135,7 @@ with col2:
         x=[student[f] for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
         y=[f for f in available_features if pd.api.types.is_numeric_dtype(type(student[f]))],
         orientation='h',
-        marker=dict(color='#9c89b8')
+        marker=dict(color='#4a4e69')
     ))
     fig.update_layout(title="Student Profile", height=400, xaxis_title="Score", yaxis_title="Features")
     st.plotly_chart(fig, use_container_width=True)
@@ -172,12 +172,12 @@ if st.button("🔮 Predict Placement", use_container_width=True):
             value=confidence,
             title={'text': "Placement Confidence"},
             gauge={'axis': {'range': [None, 100]},
-                   'bar': {'color': "#9c89b8"},
+                   'bar': {'color': "#4a4e69"},
                    'steps': [
-                       {'range': [0, 40], 'color': "#f0e6ef"},
-                       {'range': [40, 70], 'color': "#efc3e6"},
-                       {'range': [70, 100], 'color': "#f0a6ca"}],
-                   'threshold': {'line': {'color': "#9c89b8", 'width': 4}, 'thickness': 0.75, 'value': 60}}
+                       {'range': [0, 40], 'color': "#f2e9e4"},
+                       {'range': [40, 70], 'color': "#c9ada7"},
+                       {'range': [70, 100], 'color': "#9a8c98"}],
+                   'threshold': {'line': {'color': "#22223b", 'width': 4}, 'thickness': 0.75, 'value': 60}}
         ))
         fig.update_layout(height=300)
         st.plotly_chart(fig, use_container_width=True)
@@ -189,4 +189,4 @@ if st.button("🔮 Predict Placement", use_container_width=True):
 
 # ---------------- FOOTER ----------------
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: #9c89b8;'>Made with ❤️ using Streamlit | Campus Placement Analytics © 2024</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: #4a4e69;'>Made with ❤️ using Streamlit | Campus Placement Analytics © 2024</div>", unsafe_allow_html=True)
